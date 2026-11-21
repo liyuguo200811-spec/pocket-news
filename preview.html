@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>口袋新闻 · 老年机预览</title>
+<style>
+  body { margin:0; padding:24px; background:#eef0f3; font:14px/1.6 "Microsoft YaHei",sans-serif; color:#333; }
+  h1 { font-size:18px; margin:0 0 4px; }
+  .tip { color:#777; margin:0 0 20px; font-size:13px; }
+  .row { display:flex; gap:32px; align-items:flex-start; }
+  .item { text-align:center; }
+  .label { font-size:12px; color:#666; margin-bottom:8px; }
+  .label b { display:block; color:#222; font-size:13px; }
+  iframe { border:1px solid #9aa4b2; background:#fff; display:block; margin:0 auto; }
+</style>
+</head>
+<body>
+<h1>口袋新闻 · 老年机预览</h1>
+<p class="tip">每台“手机”是一个固定宽度的独立视口，页面在里面是真实换行效果。桌面浏览器给段落的默认间距远大于老手机，字号也是 16px 而老诺基亚约 10px，所以真机上同样一屏能多显示 3~4 条标题。</p>
+<div class="row">
+  <div class="item">
+    <div class="label"><b>128 × 160</b>诺基亚 S30 · 首页</div>
+    <iframe src="site/index.html" width="128" height="160" scrolling="no"></iframe>
+  </div>
+  <div class="item">
+    <div class="label"><b>240 × 320</b>诺基亚 S40 · 首页</div>
+    <iframe src="site/index.html" width="240" height="320" scrolling="no"></iframe>
+  </div>
+  <div class="item">
+    <div class="label"><b>240 × 560</b>正文页 · 一条新闻的细节</div>
+    <iframe src="site/a01.html" width="240" height="560" scrolling="no"></iframe>
+  </div>
+</div>
+</body>
+</html>
