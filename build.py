@@ -27,7 +27,8 @@ PER_PAGE = 8
 BUDGET_LIST = 3 * 1024
 BUDGET_ART = 6 * 1024
 
-SLUGS = {"热榜": "rebang", "要闻": "yaowen", "科技": "keji", "生活": "shenghuo"}
+SLUGS = {"热榜": "rebang", "要闻": "yaowen", "国际": "guoji", "社会": "shehui",
+         "科技": "keji", "体育": "tiyu", "游戏": "youxi", "生活": "shenghuo"}
 
 DOCTYPE = (
     '<?xml version="1.0" encoding="UTF-8"?>'

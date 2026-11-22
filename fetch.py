@@ -1,13 +1,17 @@
 # -*- coding: utf-8 -*-
 """抓取当日新闻，生成 data/news.json。
 
-板块：要闻（时政）/ 科技（含 AI）/ 游戏 / 热榜
+板块：要闻 / 国际 / 社会 / 科技 / 体育 / 热榜
 只用公开 RSS 和热搜接口，每条保留标题 + 最多 500 字正文摘要。
 
 正文策略：
   - RSS 里 description 足够长（>=300 字）就直接截取
   - 太短的（中新网 69 字、量子位 20 字）去抓文章页正文
   - 抓取失败就退回用 description，宁可短也不空着
+
+选稿策略（重要）：
+  先把每个源的候选池全部读出来，**跨源去重之后再按配额取**，不够的从池子深处补。
+  否则"社会"这种和"要闻"高度重复的板块，前 6 条全被去重吃掉，只剩空壳。
 """
 
 import datetime
@@ -28,10 +32,10 @@ OUT_JSON = ROOT / "data" / "news.json"
 
 TZ = datetime.timezone(datetime.timedelta(hours=8))
 NOW = datetime.datetime.now(TZ)
-SINCE = NOW - datetime.timedelta(hours=30)
 
 BODY_MAX = 500          # 每条正文上限（字）
 DESC_ENOUGH = 300       # description 超过这个字数就不用再抓网页了
+POOL_FACTOR = 4         # 每个源读候选池的倍数，给去重留余量
 
 UA = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
@@ -40,17 +44,20 @@ UA = {
 }
 
 # ---------------- 数据源 ----------------
-# hours：只收这个时间范围内的新闻。游戏类更新慢，单独放宽到 72 小时。
+# quota：最终想要几条；hours：只收这个时间范围内的。
 FEEDS = [
-    dict(cat="要闻", name="中国新闻网", url="https://www.chinanews.com.cn/rss/scroll-news.xml", quota=10, hours=30),
+    dict(cat="要闻", name="中国新闻网", url="https://www.chinanews.com.cn/rss/scroll-news.xml", quota=8, hours=30),
     dict(cat="要闻", name="中国新闻网", url="https://www.chinanews.com.cn/rss/china.xml", quota=6, hours=30),
-    dict(cat="科技", name="IT之家", url="https://www.ithome.com/rss/", quota=8, hours=30),
-    dict(cat="科技", name="量子位", url="https://www.qbitai.com/feed", quota=4, hours=48),
-    dict(cat="科技", name="极客公园", url="https://www.geekpark.net/rss", quota=4, hours=48),
-    dict(cat="游戏", name="触乐", url="https://www.chuapp.com/feed", quota=6, hours=72),
-    dict(cat="游戏", name="游研社", url="https://www.yystv.cn/rss/feed", quota=4, hours=72),
-    dict(cat="游戏", name="GameLook", url="http://www.gamelook.com.cn/feed", quota=4, hours=72),
+    dict(cat="国际", name="中国新闻网", url="https://www.chinanews.com.cn/rss/world.xml", quota=6, hours=30),
+    dict(cat="社会", name="中国新闻网", url="https://www.chinanews.com.cn/rss/society.xml", quota=6, hours=30),
+    dict(cat="科技", name="IT之家", url="https://www.ithome.com/rss/", quota=6, hours=30),
+    dict(cat="科技", name="量子位", url="https://www.qbitai.com/feed", quota=3, hours=48),
+    dict(cat="科技", name="爱范儿", url="https://www.ifanr.com/feed", quota=3, hours=48),
+    dict(cat="体育", name="中国新闻网", url="https://www.chinanews.com.cn/rss/sports.xml", quota=5, hours=30),
 ]
+
+# 板块顺序（决定页面里先出现什么）
+CAT_ORDER = ["要闻", "国际", "社会", "科技", "体育", "热榜"]
 
 HOT_QUOTA = 8
 
@@ -63,13 +70,14 @@ ENT_BLACK = ["明星", "综艺", "演唱会", "恋情", "塌房", "粉丝", "爱
 CONTAINERS = {
     "chinanews.com.cn": r'<div[^>]*class="[^"]*\bleft_zw\b[^"]*"',
     "qbitai.com": r'<div[^>]*class="[^"]*(?:entry-content|article-content|post-content)[^"]*"',
+    "ifanr.com": r'<div[^>]*class="[^"]*(?:entry-content|article-content|post-content)[^"]*"',
 }
 
 TAG_RE = re.compile(r"<[^>]+>")
 COMMENT_RE = re.compile(r"<!--.*?-->", re.S)
 WS_RE = re.compile(r"\s+")
 
-# 判断一段文字是不是抓成了网页导航（机核那种）
+# 判断一段文字是不是抓成了网页导航
 NAV_WORDS = ("首页", "登录", "注册", "下载", "讨论", "播客", "商店", "关注",
              "收藏", "历史", "专题", "预告", "会员", "购物", "分享到")
 
@@ -99,7 +107,6 @@ def clip(text: str, limit: int = BODY_MAX) -> str:
     if len(text) <= limit:
         return text
     cut = text[:limit]
-    # 尽量切在句子末尾
     for ch in "。！？；":
         p = cut.rfind(ch)
         if p > limit * 0.6:
@@ -115,15 +122,12 @@ def extract_page(url: str) -> str:
     html_text = COMMENT_RE.sub(" ", html_text)
 
     region = html_text
-    pat = None
     for domain, p in CONTAINERS.items():
         if host.endswith(domain):
-            pat = p
+            m = re.search(p, html_text)
+            if m:
+                region = html_text[m.start(): m.start() + 60000]
             break
-    if pat:
-        m = re.search(pat, html_text)
-        if m:
-            region = html_text[m.start(): m.start() + 60000]
 
     paras = []
     for raw in re.findall(r"(?is)<p[^>]*>(.*?)</p>", region):
@@ -150,6 +154,10 @@ def fmt_hot(v) -> str:
     return str(int(n))
 
 
+def dedupe_key(title: str) -> str:
+    return re.sub(r"\s+", "", title)[:20]
+
+
 # ---------------------------------------------------------------- 百度热搜
 def fetch_hot() -> list:
     raw = get("https://top.baidu.com/api/board?platform=pc&tab=realtime")
@@ -160,8 +168,7 @@ def fetch_hot() -> list:
             title = strip_html(it.get("word") or it.get("query") or it.get("title") or "")
             if not title:
                 continue
-            low = title.lower()
-            if any(k in low for k in ENT_BLACK):
+            if any(k in title.lower() for k in ENT_BLACK):
                 skipped += 1
                 continue
             out.append({
@@ -175,9 +182,11 @@ def fetch_hot() -> list:
 
 
 # ---------------------------------------------------------------- RSS
-def fetch_feed(cat: str, name: str, url: str, quota: int, hours: int = 30) -> list:
-    since = NOW - datetime.timedelta(hours=hours)
-    root = ET.fromstring(get(url))
+def parse_feed(feed: dict) -> list:
+    """只解析 RSS，不抓正文，返回候选池（按时间倒序）。"""
+    since = NOW - datetime.timedelta(hours=feed["hours"])
+    limit = feed["quota"] * POOL_FACTOR
+    root = ET.fromstring(get(feed["url"]))
     rows = []
     for it in root.iter("item"):
         title = strip_html(it.findtext("title") or "")[:40]
@@ -195,35 +204,33 @@ def fetch_feed(cat: str, name: str, url: str, quota: int, hours: int = 30) -> li
             continue
         rows.append({"title": title, "link": link, "pub": pub,
                      "desc": strip_html(it.findtext("description") or "")})
-        if len(rows) >= quota * 3:
+        if len(rows) >= limit:
             break
-
     rows.sort(key=lambda x: x["pub"], reverse=True)
-    rows = rows[:quota]
+    return rows
 
-    out = []
-    for r in rows:
+
+def make_item(feed: dict, row: dict) -> dict:
+    """给一条候选补上正文。"""
+    body = ""
+    if len(row["desc"]) >= DESC_ENOUGH:
+        body = clip(row["desc"])
+    else:
+        try:
+            body = extract_page(row["link"])
+        except Exception:
+            body = ""
+        time.sleep(0.4)          # 别把人家站点打疼
+        if len(body) < len(row["desc"]) or looks_like_nav(body):
+            body = clip(row["desc"]) if row["desc"] else body
+
+    if looks_like_nav(body):
         body = ""
-        if len(r["desc"]) >= DESC_ENOUGH:
-            body = clip(r["desc"])
-        else:
-            try:
-                body = extract_page(r["link"])
-            except Exception:
-                body = ""
-            time.sleep(0.4)          # 别把人家站点打疼
-            if len(body) < len(r["desc"]) or looks_like_nav(body):
-                body = clip(r["desc"]) if r["desc"] else body
-
-        # 抓成导航栏、或者根本没啥内容，宁可不收这条，也不往页面上放垃圾
-        if looks_like_nav(body) or len(body) < 40:
-            continue
-
-        out.append({
-            "cat": cat, "time": r["pub"].strftime("%m-%d %H:%M"), "source": name,
-            "title": r["title"], "summary": body, "hot": "", "url": r["link"],
-        })
-    return out
+    return {
+        "cat": feed["cat"], "time": row["pub"].strftime("%m-%d %H:%M"),
+        "source": feed["name"], "title": row["title"], "summary": body,
+        "hot": "", "url": row["link"],
+    }
 
 
 def main() -> int:
@@ -231,40 +238,56 @@ def main() -> int:
 
     try:
         hot = fetch_hot()
-        print("[OK]   热榜       %d 条" % len(hot))
+        print("[OK]   热榜        %d 条" % len(hot))
         all_items.extend(hot)
     except Exception as e:
-        print("[FAIL] 热榜       %r" % e)
+        print("[FAIL] 热榜        %r" % e)
         errors.append("热榜: %r" % e)
+    claimed = {dedupe_key(x["title"]) for x in all_items}
 
+    # 第一步：把所有源的候选池读进来（很快，只解析 XML）
+    pools = []
     for f in FEEDS:
-        cat, name = f["cat"], f["name"]
         try:
-            got = fetch_feed(cat, name, f["url"], f["quota"], f["hours"])
-            print("[OK]   %-4s %-6s %d 条  正文均长 %d 字"
-                  % (cat, name, len(got),
-                     sum(len(x["summary"]) for x in got) // max(1, len(got))))
-            all_items.extend(got)
+            rows = parse_feed(f)
+            pools.append((f, rows))
+            print("[池]   %-4s %-6s 候选 %2d 条" % (f["cat"], f["name"], len(rows)))
         except Exception as e:
-            print("[FAIL] %-4s %-6s %r" % (cat, name, e))
-            errors.append("%s-%s: %r" % (cat, name, e))
+            print("[FAIL] %-4s %-6s %r" % (f["cat"], f["name"], e))
+            errors.append("%s-%s: %r" % (f["cat"], f["name"], e))
 
-    if not all_items:
-        print("全部源都失败，保留上一次的数据。", file=sys.stderr)
+    # 第二步：跨源去重，不够的从池子深处补，然后再抓正文
+    picked = []
+    for f, rows in pools:
+        n = 0
+        for row in rows:
+            if n >= f["quota"]:
+                break
+            key = dedupe_key(row["title"])
+            if key in claimed:
+                continue
+            claimed.add(key)
+            picked.append((f, row))
+            n += 1
+        print("[选]   %-4s %-6s 选中 %2d 条（配额 %d）" % (f["cat"], f["name"], n, f["quota"]))
+
+    for f, row in picked:
+        try:
+            item = make_item(f, row)
+        except Exception:
+            continue
+        if len(item["summary"]) < 40:
+            continue                      # 正文太短，宁可不收
+        all_items.append(item)
+
+    if len(all_items) <= HOT_QUOTA:
+        print("几乎全部源都失败，保留上一次的数据。", file=sys.stderr)
         return 1
 
-    seen, items = set(), []
-    for it in all_items:
-        key = re.sub(r"\s+", "", it["title"])[:20]
-        if key in seen:
-            continue
-        seen.add(key)
-        items.append(it)
+    order = {c: i for i, c in enumerate(CAT_ORDER)}
+    all_items.sort(key=lambda x: order.get(x["cat"], 99))   # 稳定排序，板块内保持原序
 
-    order = {"要闻": 0, "科技": 1, "游戏": 2, "热榜": 3}
-    items.sort(key=lambda x: order.get(x["cat"], 9))     # 稳定排序，板块内保持原序
-
-    for i, it in enumerate(items, 1):
+    for i, it in enumerate(all_items, 1):
         it["id"] = "a%02d" % i
 
     payload = {
@@ -273,16 +296,17 @@ def main() -> int:
         "date": NOW.strftime("%m-%d"),
         "weekday": "周" + "一二三四五六日"[NOW.weekday()],
         "updated": NOW.strftime("%Y-%m-%d %H:%M"),
-        "items": items,
+        "items": all_items,
     }
     OUT_JSON.parent.mkdir(parents=True, exist_ok=True)
     OUT_JSON.write_text(json.dumps(payload, ensure_ascii=False, indent=1), encoding="utf-8")
 
     stat = {}
-    for it in items:
+    for it in all_items:
         stat[it["cat"]] = stat.get(it["cat"], 0) + 1
-    lens = [len(x["summary"]) for x in items]
-    print("共 %d 条：%s" % (len(items), " / ".join("%s %d" % (k, v) for k, v in stat.items())))
+    lens = [len(x["summary"]) for x in all_items]
+    print("共 %d 条：%s" % (len(all_items),
+                          " / ".join("%s %d" % (c, stat.get(c, 0)) for c in CAT_ORDER)))
     print("正文长度 平均 %d 字 / 最短 %d / 最长 %d"
           % (sum(lens) // len(lens), min(lens), max(lens)))
     print("写入 %s" % OUT_JSON)
