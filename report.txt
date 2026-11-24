@@ -1,77 +1,77 @@
-口袋新闻 · 体积报告（2026-11-24 16:54）
+口袋新闻 · 体积报告（2026-11-24 19:45）
 ====================================================
 文件总数        : 66 个
-全部文件合计    : 102992 字节（gzip 后 67874 字节）
-列表页最大      : 1531 字节（预算 3072）
-正文页平均/最大 : 1649 / 2048 字节（预算 6144）
+全部文件合计    : 105436 字节（gzip 后 69276 字节）
+列表页最大      : 1616 字节（预算 3072）
+正文页平均/最大 : 1686 / 2090 字节（预算 6144）
 
 链接形式        : 扩展名省略（a01 而非 a01.html），避免 308 重定向
 
 逐个文件：
   文件                      字节    gzip
-  a01.html              2030    1301
-  a02.html              2023    1325
-  a03.html              1724    1202
-  a04.html              1938    1264
-  a05.html              1908    1287
-  a06.html              1796    1223
-  a07.html              1974    1303
-  a08.html              1986    1229
-  a09.html              1583    1067
-  a10.html              1694    1077
-  a11.html              2038    1306
-  a12.html              2028    1340
-  a13.html              1862    1226
-  a14.html              2048    1193
-  a15.html              1518    1015
-  a16.html              1502     940
-  a17.html              2034    1272
-  a18.html              1945    1223
-  a19.html              1902    1232
-  a20.html              1582     905
-  a21.html              1879    1240
-  a22.html              1944    1260
-  a23.html              1894    1158
-  a24.html              1537    1044
-  a25.html              2012    1339
-  a26.html              1829    1128
-  a27.html              1441     968
-  a28.html              1697    1122
-  a29.html              1791    1199
-  a30.html              1401    1008
-  a31.html              1642    1068
-  a32.html              1774    1185
-  a33.html              1364     947
+  a01.html              1888    1193
+  a02.html              2090    1308
+  a03.html              1906    1219
+  a04.html              1855    1176
+  a05.html              1726    1232
+  a06.html              1929    1257
+  a07.html              1946    1285
+  a08.html              2019    1265
+  a09.html              1506    1069
+  a10.html              2042    1312
+  a11.html              1688    1032
+  a12.html              2009    1248
+  a13.html              1847    1164
+  a14.html              2050    1331
+  a15.html              1795    1190
+  a16.html              1965    1239
+  a17.html              1966    1294
+  a18.html              2020    1180
+  a19.html              1898    1245
+  a20.html              2008    1320
+  a21.html              1593    1021
+  a22.html              1880    1249
+  a23.html              2030    1241
+  a24.html              1921    1253
+  a25.html              1824    1127
+  a26.html              1958    1300
+  a27.html              1464    1002
+  a28.html              1792    1115
+  a29.html              1816    1248
+  a30.html              1931    1258
+  a31.html              1879    1225
+  a32.html              1534    1032
+  a33.html              1462    1015
   a34.html              2025    1344
   a35.html              1417     963
-  a36.html              1821    1255
-  a37.html              1779    1254
-  a38.html              1923    1286
-  a39.html              1867    1210
-  a40.html              1969    1258
-  a41.html              1822    1093
-  a42.html              1807    1168
-  a43.html              1811    1093
-  a44.html               741     552
-  a45.html               803     591
-  a46.html               912     674
-  a47.html               795     601
-  a48.html               806     635
-  a49.html               729     557
-  a50.html               896     642
-  a51.html               884     672
-  cat-guoji.html        1134     790
-  cat-keji-2.html        981     683
-  cat-keji.html         1452     976
-  cat-rebang.html       1089     714
-  cat-shehui.html       1088     746
-  cat-tiyu.html         1009     675
-  cat-yaowen-2.html     1202     805
-  cat-yaowen.html       1339     904
-  index.html            1447     937
-  list-2.html           1494     949
-  list-3.html           1434     925
-  list-4.html           1531     985
-  list-5.html           1494     987
-  list-6.html           1280     786
-  list-7.html            891     568
+  a36.html              1858    1269
+  a37.html              1780    1173
+  a38.html              1932    1284
+  a39.html              1778    1162
+  a40.html              1905    1241
+  a41.html              1914    1123
+  a42.html              1867    1209
+  a43.html              1969    1257
+  a44.html               690     514
+  a45.html               812     618
+  a46.html               912     675
+  a47.html               812     592
+  a48.html               747     566
+  a49.html               741     553
+  a50.html               790     589
+  a51.html               827     633
+  cat-guoji.html        1134     799
+  cat-keji-2.html       1042     718
+  cat-keji.html         1525    1047
+  cat-rebang.html       1077     707
+  cat-shehui.html       1149     782
+  cat-tiyu.html         1047     727
+  cat-yaowen-2.html     1196     817
+  cat-yaowen.html       1403     931
+  index.html            1511     964
+  list-2.html           1516     982
+  list-3.html           1455     935
+  list-4.html           1616    1061
+  list-5.html           1548    1003
+  list-6.html           1309     817
+  list-7.html            895     576
