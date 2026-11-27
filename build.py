@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """口袋新闻 · 老年机极简版生成器
 
@@ -25,10 +25,11 @@ ROOT = Path(__file__).resolve().parent
 OUT = ROOT / "site"
 PER_PAGE = 8
 BUDGET_LIST = 3 * 1024
-BUDGET_ART = 6 * 1024
+BUDGET_ART = 8 * 1024
 
 SLUGS = {"热榜": "rebang", "要闻": "yaowen", "国际": "guoji", "社会": "shehui",
-         "科技": "keji", "体育": "tiyu", "游戏": "youxi", "生活": "shenghuo"}
+         "科技": "keji", "体育": "tiyu", "游戏": "youxi", "生活": "shenghuo",
+         "深度": "shendu"}
 
 DOCTYPE = (
     '<?xml version="1.0" encoding="UTF-8"?>'
@@ -89,27 +90,75 @@ def render_list(items, page_no, npages, url_for, cats, brand, sub, start_no) -> 
     return shell(brand, paras)
 
 
-def render_article(it, prev_id, next_id, brand) -> str:
-    paras = ['<a href="/">返回</a>', "<b>%s</b>" % esc(it["title"])]
+def paginate_body(text: str, per_page: int = 600) -> list:
+    """把正文切成每页约 600 字。
 
-    meta = [esc(it["source"])]
-    if it.get("time"):
-        meta.append(it["time"])
-    if it.get("hot"):
-        meta.append("热度 " + esc(it["hot"]))
-    paras.append("　".join(meta))
+    先用换行（段落）作为分块单位，块太长的再按句子摊开，
+    保证每一页都能塞进 ~2.2KB，老手机不会因为单页过大而内存不足。
+    """
+    blocks = []
+    for raw in (text or "").split("\n"):
+        b = raw.strip()
+        if not b:
+            continue
+        if len(b) <= per_page:
+            blocks.append(b)
+        else:
+            blocks.extend(split_paras(b, 300))
 
-    paras.extend(esc(p) for p in split_paras(it.get("summary") or ""))
+    pages, cur = [], ""
+    for b in blocks:
+        if cur and len(cur) + len(b) + 1 > per_page:
+            pages.append(cur)
+            cur = b
+        else:
+            cur = (cur + "\n" + b) if cur else b
+    if cur:
+        pages.append(cur)
+    return pages or [""]
+
+
+def art_url(iid: str, k: int) -> str:
+    return iid if k == 1 else "%s-%d" % (iid, k)
+
+
+def art_file(iid: str, k: int) -> str:
+    return "%s.html" % iid if k == 1 else "%s-%d.html" % (iid, k)
+
+
+def render_article(it, page_no, npages, prev_id, next_id) -> str:
+    paras = ['<a href="/">返回</a>']
+
+    if page_no == 1:
+        paras.append("<b>%s</b>" % esc(it["title"]))
+        meta = [esc(it["source"])]
+        if it.get("time"):
+            meta.append(it["time"])
+        if it.get("hot"):
+            meta.append("热度 " + esc(it["hot"]))
+        if npages > 1:
+            meta.append("共%d页" % npages)
+        paras.append("　".join(meta))
+    else:
+        paras.append("%d/%d" % (page_no, npages))
+
+    for p in split_paras(it["_pages"][page_no - 1]):
+        paras.append(esc(p))
 
     tail = []
-    if prev_id:
-        tail.append('<a href="%s">上一条</a>' % prev_id)
-    if next_id:
-        tail.append('<a href="%s">下一条</a>' % next_id)
+    if page_no > 1:
+        tail.append('<a href="%s">上一页</a>' % art_url(it["id"], page_no - 1))
+    if page_no < npages:
+        tail.append('<a href="%s">下一页</a>' % art_url(it["id"], page_no + 1))
+    else:
+        if prev_id:
+            tail.append('<a href="%s">上一篇</a>' % prev_id)
+        if next_id:
+            tail.append('<a href="%s">下一篇</a>' % next_id)
     if tail:
         paras.append(" ".join(tail))
 
-    return shell(it["title"][:16], paras)
+    return shell("%s %d" % (it["title"][:14], page_no), paras)
 
 
 def main() -> int:
@@ -168,11 +217,15 @@ def main() -> int:
                                            brand, "%s %d条" % (name, len(sub)),
                                            (pno - 1) * PER_PAGE + 1))
 
-    # --- 正文页 ---
+    # --- 正文页（长文按 600 字一页切分）---
     for idx, it in enumerate(items):
         prev_id = items[idx - 1]["id"] if idx > 0 else None
         next_id = items[idx + 1]["id"] if idx < len(items) - 1 else None
-        put("%s.html" % it["id"], render_article(it, prev_id, next_id, brand))
+        it["_pages"] = paginate_body(it.get("summary") or "")
+        n = len(it["_pages"])
+        for k in range(1, n + 1):
+            put(art_file(it["id"], k), render_article(it, k, n, prev_id, next_id))
+        del it["_pages"]
 
     # ---------- 自检 ----------
     problems = []
@@ -195,7 +248,7 @@ def main() -> int:
         if re.search(r'href="[^"]*\.html"', text):
             problems.append("%s 链接里还带 .html，会触发 308 重定向" % f.name)
 
-    is_art = lambda n: re.fullmatch(r"a\d+\.html", n) is not None
+    is_art = lambda n: re.fullmatch(r"a\d+(-\d+)?\.html", n) is not None
     list_bytes = [(n, b) for n, (b, _) in written.items() if not is_art(n)]
     art_bytes = [(n, b) for n, (b, _) in written.items() if is_art(n)]
     for n, b in list_bytes:
@@ -216,8 +269,8 @@ def main() -> int:
         "文件总数        : %d 个" % len(written),
         "全部文件合计    : %d 字节（gzip 后 %d 字节）" % (total, gz_total),
         "列表页最大      : %d 字节（预算 3072）" % max_list,
-        "正文页平均/最大 : %d / %d 字节（预算 6144）"
-        % (sum(b for _, b in art_bytes) // len(art_bytes), max_art),
+        "正文页平均/最大 : %d / %d 字节（预算 %d）"
+        % (sum(b for _, b in art_bytes) // len(art_bytes), max_art, BUDGET_ART),
         "",
         "链接形式        : 扩展名省略（a01 而非 a01.html），避免 308 重定向",
         "",
