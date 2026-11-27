@@ -1,20 +1,20 @@
-口袋新闻 · 体积报告（2026-11-27 22:19）
+口袋新闻 · 体积报告（2026-11-27 22:43）
 ====================================================
-文件总数        : 88 个
-全部文件合计    : 137429 字节（gzip 后 93789 字节）
-列表页最大      : 1575 字节（预算 3072）
-正文页平均/最大 : 1599 / 2220 字节（预算 8192）
+文件总数        : 154 个
+全部文件合计    : 187407 字节（gzip 后 132407 字节）
+列表页最大      : 1571 字节（预算 3072）
+正文页平均/最大 : 1620 / 2220 字节（预算 8192）
 
 链接形式        : 扩展名省略（a01 而非 a01.html），避免 308 重定向
 
 逐个文件：
   文件                      字节    gzip
-  a01.html              1796    1210
-  a02.html              2040    1247
-  a03.html              1593    1014
-  a04.html              1870    1187
-  a05.html              1686    1110
-  a06.html              1920    1221
+  a01.html              1537    1083
+  a02.html              1997    1299
+  a03.html              1990    1284
+  a04.html              1824    1220
+  a05.html              1593    1015
+  a06.html              1870    1186
   a07.html              1761    1152
   a08.html              1813    1164
   a09.html              1556    1028
@@ -22,37 +22,36 @@
   a11.html              1935    1192
   a12.html              2031    1220
   a13.html              1890    1167
-  a14.html              1779    1118
-  a15.html              1543    1030
-  a16.html              2114    1216
-  a17-2.html            1019     709
-  a17.html              1245     904
-  a18.html              1987    1159
-  a19.html              2107    1319
-  a20-2.html            1384     995
-  a20-3.html            1428    1024
-  a20.html              1358     960
-  a21-2.html            1993    1381
-  a21-3.html            1335     996
-  a21.html              2039    1391
-  a22-2.html            2013    1372
-  a22-3.html            1605    1169
-  a22.html              2219    1424
-  a23-2.html            2005    1396
-  a23-3.html             883     669
-  a23.html              2029    1331
-  a24-2.html            1811    1309
-  a24-3.html            1302     987
-  a24.html              2067    1427
-  a25-2.html            1411    1008
-  a25-3.html            1293     945
-  a25-4.html            1186     866
-  a25-5.html            1620    1120
-  a25.html              1430    1017
-  a26-2.html            2044    1284
-  a26-3.html            1438    1009
-  a26-4.html            1477    1017
-  a26.html              1827    1069
+  a14.html              2004    1238
+  a15-2.html            1324     952
+  a15-3.html            1612    1079
+  a15.html              1513    1018
+  a16.html              1779    1117
+  a17.html              1543    1030
+  a18.html              2114    1216
+  a19-2.html            1019     710
+  a19.html              1245     904
+  a20.html              1987    1160
+  a21-2.html            2044    1283
+  a21-3.html            1438    1008
+  a21-4.html            1477    1016
+  a21.html              1827    1068
+  a22-2.html            1993    1381
+  a22-3.html            1335     997
+  a22.html              2039    1391
+  a23-2.html            2013    1372
+  a23-3.html            1605    1167
+  a23.html              2219    1424
+  a24-2.html            2005    1397
+  a24-3.html             883     669
+  a24.html              2029    1331
+  a25-2.html            1811    1309
+  a25-3.html            1302     987
+  a25.html              2067    1427
+  a26-2.html            2100    1437
+  a26-3.html            2096    1441
+  a26-4.html             605     486
+  a26.html              2140    1463
   a27-2.html            2071    1427
   a27-3.html            2104    1404
   a27-4.html             657     531
@@ -78,22 +77,89 @@
   a31-5.html            1944    1393
   a31-6.html            2006    1329
   a31.html              1801    1286
-  a32.html               908     690
-  a33.html               775     564
+  a32.html               908     691
+  a33.html               775     563
   a34.html               926     700
-  a35.html               755     587
-  a36.html               831     607
+  a35.html               755     588
+  a36.html               745     562
   a37.html               751     566
   a38.html               835     635
   a39.html               874     689
   cat-guoji.html        1187     840
-  cat-keji-2.html       1012     704
-  cat-keji.html         1554    1073
-  cat-rebang.html       1094     745
-  cat-shendu.html       1160     820
-  cat-yaowen.html       1201     837
-  index.html            1497     991
-  list-2.html           1499    1006
-  list-3.html           1575    1045
-  list-4.html           1417     950
-  list-5.html           1096     724
+  cat-keji-2.html       1018     710
+  cat-keji.html         1546    1071
+  cat-rebang.html       1075     728
+  cat-shendu.html       1167     829
+  cat-yaowen.html       1149     802
+  index.html            1518    1008
+  list-2.html           1459     979
+  list-3.html           1571    1060
+  list-4.html           1466     985
+  list-5.html           1077     709
+  sc01.html              789     639
+  sc02.html              784     609
+  sc03.html              821     638
+  sc04.html              739     587
+  sc05.html              744     586
+  sc06.html              710     570
+  sc07.html              731     578
+  sc08.html              770     583
+  sc09.html              749     574
+  sc10.html              782     610
+  sc11.html              764     610
+  sc12.html              773     619
+  sc13.html              749     596
+  sc14.html              770     586
+  sc15.html              761     602
+  sc16.html              751     587
+  sc17.html              764     598
+  sc18.html              771     615
+  sc19.html              785     609
+  sc20.html              782     617
+  sc21.html              807     634
+  sc22.html              813     637
+  sc23.html              751     591
+  sc24.html              756     599
+  sc25.html              697     555
+  sc26.html              703     549
+  sc27.html              730     583
+  sc28.html              722     575
+  sc29.html              728     579
+  sc30.html              684     541
+  sc31.html              703     569
+  sc32.html              686     548
+  sc33.html              672     550
+  sc34.html              688     553
+  sc35.html              665     526
+  sc36.html              700     563
+  sc37.html              666     522
+  sc38.html              674     545
+  sc39.html              645     518
+  sc40.html              674     537
+  sc41.html              770     618
+  sc42.html              779     610
+  sc43.html              795     624
+  sc44.html              746     592
+  sc45.html              770     613
+  sc46.html              757     598
+  sc47.html              775     612
+  sc48.html              767     588
+  sc49.html              808     638
+  sc50.html              774     601
+  sc51.html              764     589
+  sc52.html              782     612
+  sc53.html              795     629
+  sc54.html              778     620
+  sc55.html              736     592
+  sc56.html              759     601
+  sc57.html              802     618
+  sc58.html              743     595
+  sc59.html              717     563
+  sc60.html              734     612
+  sg1-2.html             764     473
+  sg1.html               784     480
+  sg2-2.html             788     495
+  sg2.html               814     500
+  sg3-2.html             786     492
+  sg3.html               810     505
+  sucai.html             490     364
