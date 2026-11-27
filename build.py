@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """口袋新闻 · 老年机极简版生成器
 
@@ -77,12 +77,14 @@ def pager(page_no: int, npages: int, url_for) -> str:
     return " ".join(parts)
 
 
-def render_list(items, page_no, npages, url_for, cats, brand, sub, start_no) -> str:
+def render_list(items, page_no, npages, url_for, cats, brand, sub, start_no, extra="") -> str:
     nav = " ".join('<a href="cat-%s">%s</a>' % (slug, name) for name, slug in cats)
     paras = ["<b>%s</b>" % esc(brand)]
     if sub:
         paras.append(esc(sub))
     paras.append(nav)
+    if extra:
+        paras.append(extra)
     for i, it in enumerate(items):
         paras.append('%d <a href="%s">%s</a>'
                      % (start_no + i, it["id"], esc(it["title"])))
@@ -166,6 +168,11 @@ def main() -> int:
     brand = data.get("site", "口袋新闻")
     items = data["items"]
 
+    mat_path = ROOT / "data" / "materials.json"
+    mats = []
+    if mat_path.exists():
+        mats = json.loads(mat_path.read_text(encoding="utf-8")).get("cards", [])
+
     cats = []
     for it in items:
         if it["cat"] not in cats:
@@ -183,7 +190,11 @@ def main() -> int:
         (OUT / name).write_bytes(raw)
         written[name] = (len(raw), len(gzip.compress(raw, 9)))
 
-    head = "%s%s %d条" % (data.get("date", ""), data.get("weekday", ""), len(items))
+    head = "%s%s %s%s%d条" % (
+        data.get("date", ""), data.get("weekday", ""),
+        (data.get("weather", "") + " ") if data.get("weather") else "",
+        (data.get("countdown", "") + " ") if data.get("countdown") else "",
+        len(items))
 
     # --- 全部新闻，分页 ---
     chunks = [items[i:i + PER_PAGE] for i in range(0, len(items), PER_PAGE)]
@@ -198,7 +209,9 @@ def main() -> int:
     for pno, chunk in enumerate(chunks, 1):
         put(all_file(pno), render_list(chunk, pno, npages, all_url, cat_pairs,
                                        brand, head if pno == 1 else "",
-                                       (pno - 1) * PER_PAGE + 1))
+                                       (pno - 1) * PER_PAGE + 1,
+                                       ('<a href="sucai">素材库 %d张</a>' % len(mats))
+                                       if (pno == 1 and mats) else ""))
 
     # --- 分类页 ---
     for name, slug in cat_pairs:
@@ -226,6 +239,58 @@ def main() -> int:
         for k in range(1, n + 1):
             put(art_file(it["id"], k), render_article(it, k, n, prev_id, next_id))
         del it["_pages"]
+
+    # --- 素材库（静态数据，不依赖抓取）---
+    if mats:
+        PER = 10
+        groups = []
+        for c in mats:
+            g = c.get("grp", "人物")
+            for name, bucket in groups:
+                if name == g:
+                    bucket.append(c)
+                    break
+            else:
+                groups.append((g, [c]))
+
+        n = 0
+        for _, bucket in groups:
+            for c in bucket:
+                n += 1
+                c["_no"] = n
+
+        # 目录页
+        ps = ["<b>素材库</b>", "人物 %d 张" % len(mats)]
+        for gi, (gname, bucket) in enumerate(groups, 1):
+            ps.append('%d <a href="sg%d">%s</a>' % (gi, gi, esc(gname)))
+        put("sucai.html", shell("素材库", ps))
+
+        # 分组列表页
+        for gi, (gname, bucket) in enumerate(groups, 1):
+            chunks = [bucket[i:i + PER] for i in range(0, len(bucket), PER)]
+            for pno, chunk in enumerate(chunks, 1):
+                ps = ["<b>%s</b>" % esc(gname), "%d张" % len(bucket)]
+                for c in chunk:
+                    ps.append('%d <a href="sc%02d">%s</a>' % (c["_no"], c["_no"], esc(c["name"])))
+
+                def g_url(i, gi=gi):
+                    return "sg%d" % gi if i == 1 else "sg%d-%d" % (gi, i)
+
+                ps.append(pager(pno, len(chunks), g_url))
+                put("sg%d.html" % gi if pno == 1 else "sg%d-%d.html" % (gi, pno),
+                    shell(gname, ps))
+
+        # 卡片页
+        for k, card in enumerate(mats, 1):
+            ps = ["<b>%s</b>" % esc(card["name"]), esc(card.get("grp", "")) + "　" + esc(card["tag"]),
+                  esc(card["body"]), "适用 " + esc(card["topics"])]
+            tail = ['<a href="sucai">回素材库</a>']
+            if k > 1:
+                tail.append('<a href="sc%02d">上一张</a>' % (k - 1))
+            if k < len(mats):
+                tail.append('<a href="sc%02d">下一张</a>' % (k + 1))
+            ps.append(" ".join(tail))
+            put("sc%02d.html" % k, shell(card["name"][:10], ps))
 
     # ---------- 自检 ----------
     problems = []

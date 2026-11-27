@@ -27,6 +27,26 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 OUT_JSON = ROOT / "data" / "news.json"
 
+# 天气：改成你所在城市，用拼音或英文，例如 shanghai / chengdu / wuhan。
+# 留空字符串 "" 就不抓天气。抓不到也不会影响其他内容。
+CITY = "beibei"
+
+# 倒计时：名称 + 目标日期。过去的自动跳过，写几组都行。
+COUNTDOWNS = [("高考", "2027-06-07")]
+
+# wttr.in 的天气代码 → 中文（它的中文翻译不全，雾霾天会直接给英文）
+WCODE = {
+    "113": "晴", "149": "雾霾", "116": "多云", "119": "阴", "122": "阴", "143": "雾",
+    "248": "雾", "260": "雾", "176": "阵雨", "263": "小雨", "266": "小雨",
+    "293": "小雨", "296": "小雨", "299": "中雨", "302": "中雨", "305": "大雨",
+    "308": "大雨", "353": "小阵雨", "356": "阵雨", "359": "暴雨",
+    "179": "雨夹雪", "182": "雨夹雪", "185": "冻雨", "281": "冻雨",
+    "284": "冻雨", "311": "冻雨", "314": "冻雨", "200": "雷阵雨",
+    "386": "雷阵雨", "389": "雷阵雨", "227": "雪", "230": "暴雪",
+    "323": "小雪", "326": "小雪", "329": "中雪", "332": "中雪",
+    "335": "大雪", "338": "大雪", "368": "阵雪", "371": "阵雪",
+}
+
 TZ = datetime.timezone(datetime.timedelta(hours=8))
 NOW = datetime.datetime.now(TZ)
 
@@ -158,6 +178,35 @@ def fmt_hot(v) -> str:
     if n >= 10000:
         return "%.1f万" % (n / 10000)
     return str(int(n))
+
+
+def fetch_weather() -> str:
+    """抓当前城市天气，返回类似「晴 3~9℃」的短句。失败返回空串。"""
+    if not CITY:
+        return ""
+    d = json.loads(get("https://wttr.in/%s?format=j1&lang=zh" % CITY, timeout=15))
+    cur = d["current_condition"][0]
+    desc = WCODE.get(str(cur.get("weatherCode", "")), "")
+    if not desc and cur.get("lang_zh"):
+        desc = cur["lang_zh"][0].get("value", "")
+    if not desc:
+        desc = cur["weatherDesc"][0]["value"]
+    today = d["weather"][0]
+    return "%s %s~%s℃" % (desc, today["mintempC"], today["maxtempC"])
+
+
+def build_countdown() -> str:
+    """返回「距高考192天」，多组用 · 连接。"""
+    parts = []
+    for name, ds in COUNTDOWNS:
+        try:
+            d = datetime.date.fromisoformat(ds)
+        except Exception:
+            continue
+        n = (d - NOW.date()).days
+        if n >= 0:
+            parts.append("距%s%d天" % (name, n))
+    return "·".join(parts)
 
 
 def dedupe_key(title: str) -> str:
@@ -387,9 +436,18 @@ def main() -> int:
     for i, it in enumerate(all_items, 1):
         it["id"] = "a%02d" % i
 
+    weather = ""
+    try:
+        weather = fetch_weather()
+        print("[OK]   天气        %s" % (weather or "跳过"))
+    except Exception as e:
+        print("[FAIL] 天气        %r" % e)
+
     payload = {
         "_note": "内容来自公开 RSS、知乎日报与少数派接口，各保留标题与正文摘要，仅供个人阅读。",
         "site": "口袋新闻",
+        "weather": weather,
+        "countdown": build_countdown(),
         "date": NOW.strftime("%m-%d"),
         "weekday": "周" + "一二三四五六日"[NOW.weekday()],
         "updated": NOW.strftime("%Y-%m-%d %H:%M"),
